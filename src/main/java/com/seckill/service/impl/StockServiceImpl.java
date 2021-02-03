@@ -6,19 +6,16 @@ import com.seckill.service.StockService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-
 /**
  * <p>
  *  服务实现类
  * </p>
  *
  * @author ty
- * @since 2021-02-02
+ * @since 2021-02-03
  */
 @Service
 public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements StockService {
-    @Resource
     private StockMapper stockMapper;
 
     @Override

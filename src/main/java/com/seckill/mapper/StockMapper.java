@@ -10,14 +10,16 @@ import org.apache.ibatis.annotations.Select;
  * </p>
  *
  * @author ty
- * @since 2021-02-02
+ * @since 2021-02-03
  */
 public interface StockMapper extends BaseMapper<Stock> {
     /**
-     * for Update悲观锁查询
+     * for update查询
      * @param id
+     * 商品ID
      * @return com.seckill.entity.Stock
      */
-    @Select("select * from stock where id=#{id} for update")
+    @Select("select * from stock where id = #{id} for update")
     public Stock getByIdForUpdate(int id);
+
 }
