@@ -6,11 +6,18 @@ import com.seckill.mapper.StockOrderMapper;
 import com.seckill.service.StockOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.seckill.service.StockService;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Collections;
+
 /**
  * <p>
  *  服务实现类
@@ -25,6 +32,29 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
     private StockService stockService;
     @Resource
     private StockOrderService stockOrderService;
+    @Resource
+    StringRedisTemplate stringRedisTemplate;
+
+    @Override
+    public void createOrderWithRedis(Integer id) {
+        //校验并扣减redis库存
+        saleStockWithRedis(id);
+    }
+
+    public void saleStockWithRedis(Integer id){
+        // 执行 lua 脚本
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+        // 指定 lua 脚本
+        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("/lua/saleStock.lua")));
+        // 指定返回类型
+        redisScript.setResultType(Long.class);
+        // 参数一：redisScript，参数二：key列表，参数三：arg（可多个）
+        Long result = stringRedisTemplate.execute(redisScript, Collections.singletonList(id.toString()));
+        if(result==-1) {
+            throw new RuntimeException("redis库存不足，扣减失败");
+        }
+    }
+
 
     @Override
     /**
@@ -77,7 +107,7 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
         return stock;
     }
     /**
-     * 悲观锁校验库存
+     * 悲观锁校验redis库存
      * @param id
      * 库存id
      * @return com.seckill.entity.Stock

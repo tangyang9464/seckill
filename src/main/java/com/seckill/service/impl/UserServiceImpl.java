@@ -59,24 +59,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         //验证商品合法性
         Stock stock = stockService.getById(sid);
         if(stock==null){
-            log.debug("商品不存在");
+            log.info("商品不存在");
             return false;
         }
         //验证时间
-        if(stock.getDeadline().isBefore(LocalDateTime.now())){
-            log.debug("未到秒杀时间");
+        if(LocalDateTime.now().isBefore(LocalDateTime.now())){
+            log.info("未到秒杀时间");
             return false;
         }
         //验证用户合法性
         if(this.getById(uid)==null){
-            log.debug("用户不存在");
+            log.info("用户不存在");
             return false;
         }
         //验证用户操作频率
         String limitKey = CacheKey.LIMIT_KEY.getKey()+"_"+uid+"_"+sid;
         String limitValue = stringRedisTemplate.opsForValue().get(limitKey);
         if(limitValue!=null && Integer.parseInt(limitKey)>10){
-            log.debug("操作频率过高");
+            log.info("操作频率过高");
             return false;
         }
         return true;
@@ -85,14 +85,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public void addVisitCount(int uid, int sid) {
         String limitKey = CacheKey.LIMIT_KEY.getKey()+"_"+uid+"_"+sid;
-        String limitVal = stringRedisTemplate.opsForValue().get(limitKey);
-
-        if (limitVal == null) {
-            stringRedisTemplate.opsForValue().set(limitKey,"0",3600,TimeUnit.SECONDS);
-        }
-        else{
-            String newVal = String.valueOf(Integer.parseInt(limitVal)+1);
-            stringRedisTemplate.opsForValue().set(limitKey,newVal,3600,TimeUnit.SECONDS);
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(limitKey,"0",10,TimeUnit.MINUTES);
+        if(flag!=null && !flag) {
+            stringRedisTemplate.boundValueOps(limitKey).increment(1);
         }
     }
 }

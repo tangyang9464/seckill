@@ -43,11 +43,4 @@ public class Stock implements Serializable {
      * 乐观锁，版本号
      */
     private Integer version;
-
-    /**
-     * 秒杀截至时间
-     */
-    private LocalDateTime deadline;
-
-
 }

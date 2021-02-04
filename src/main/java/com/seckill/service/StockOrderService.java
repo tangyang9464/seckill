@@ -24,4 +24,10 @@ public interface StockOrderService extends IService<StockOrder> {
      * @return void
      */
     public void createOrderByPessimistic(int id);
+    /**
+     * 通过redis扣减库存
+     * @param id
+     * @return void
+     */
+    public void createOrderWithRedis(Integer id);
 }
