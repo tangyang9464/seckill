@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author ty
- * @since 2021-02-03
+ * @since 2021-02-05
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -40,7 +40,14 @@ public class Stock implements Serializable {
     private Integer sale;
 
     /**
+     * 秒杀开始时间
+     */
+    private LocalDateTime startDate;
+
+    /**
      * 乐观锁，版本号
      */
     private Integer version;
+
+
 }

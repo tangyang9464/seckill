@@ -2,7 +2,6 @@ package com.seckill.service;
 
 import com.seckill.entity.Stock;
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.ibatis.annotations.Select;
 
 /**
  * <p>
@@ -10,7 +9,7 @@ import org.apache.ibatis.annotations.Select;
  * </p>
  *
  * @author ty
- * @since 2021-02-03
+ * @since 2021-02-05
  */
 public interface StockService extends IService<Stock> {
     /**

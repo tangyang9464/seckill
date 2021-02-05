@@ -9,25 +9,26 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * </p>
  *
  * @author ty
- * @since 2021-02-02
+ * @since 2021-02-05
  */
 public interface StockOrderService extends IService<StockOrder> {
     /**
      * 通过乐观锁创建订单
-     * @param id
-     * @return void
+     * @param sid
+     * @param uid
      */
-    public void createOrderByOptimistic(int id);
+    public void createOrderByOptimistic(String uid,Integer sid);
     /**
      * 通过事务悲观锁锁创建订单
-     * @param id
+     * @param sid
+     * @param uid
      * @return void
      */
-    public void createOrderByPessimistic(int id);
+    public void createOrderByPessimistic(String uid,Integer sid);
     /**
      * 通过redis扣减库存
-     * @param id
-     * @return void
+     * @param sid
+     * @param uid
      */
-    public void createOrderWithRedis(Integer id);
+    public void createOrderWithRedis(String uid,Integer sid);
 }

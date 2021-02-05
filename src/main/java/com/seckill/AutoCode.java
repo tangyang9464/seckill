@@ -69,6 +69,7 @@ public class AutoCode {
         templateConfig.setController("");
 //        templateConfig.setService("");
 //        templateConfig.setServiceImpl("");
+//        templateConfig.setMapper("");
         templateConfig.setXml("");
         //删除上述即可生成service
         mpg.setTemplate(templateConfig);

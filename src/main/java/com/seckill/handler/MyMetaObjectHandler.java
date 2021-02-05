@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 /**
+ * mybatis-plus自动填充类
  * @author ty
  * @date 2021/2/2 20:33
  */

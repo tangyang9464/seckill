@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author ty
- * @since 2021-02-03
+ * @since 2021-02-05
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -20,10 +20,21 @@ public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    /**
+     * 手机号
+     */
+    @TableId(value = "mobile", type = IdType.INPUT)
+    private String mobile;
 
-    private String userName;
+    /**
+     * 密码
+     */
+    private String password;
+
+    /**
+     * 盐
+     */
+    private String salt;
 
 
 }

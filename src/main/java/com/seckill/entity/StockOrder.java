@@ -1,8 +1,6 @@
 package com.seckill.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.time.LocalDateTime;
 import java.io.Serializable;
@@ -15,7 +13,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author ty
- * @since 2021-02-02
+ * @since 2021-02-05
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -32,6 +30,11 @@ public class StockOrder implements Serializable {
     private Integer sid;
 
     /**
+     * 用户id
+     */
+    private String uid;
+
+    /**
      * 商品名称
      */
     private String name;
@@ -39,6 +42,7 @@ public class StockOrder implements Serializable {
     /**
      * 创建时间
      */
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+
 }

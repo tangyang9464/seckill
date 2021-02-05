@@ -1,9 +1,11 @@
 package com.seckill.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.util.concurrent.RateLimiter;
 import com.seckill.service.StockOrderService;
 import com.seckill.service.UserService;
 import com.seckill.utils.CacheKey;
+import com.seckill.utils.CookieUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.concurrent.TimeUnit;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 
 
 /**
@@ -34,14 +37,14 @@ public class CreateOrderController {
     /**
      *创建秒杀订单
      * @param sid 商品ID
-     * @param uid 用户ID
      * @param vertifyHash 验证值
      * @return java.lang.String
      */
     @RequestMapping("/createOrder")
     public String createOrder(@RequestParam int sid,
-                              @RequestParam int uid,
-                              @RequestParam String vertifyHash){
+                              @RequestParam String vertifyHash,
+                              HttpServletRequest request) throws JsonProcessingException {
+        String uid = userService.getUserByCookie(request).getMobile();
         //没有足够令牌可用
         if(!rateLimiter.tryAcquire()){
             log.debug("你被限制流了");
@@ -59,13 +62,13 @@ public class CreateOrderController {
         }
         //增加访问次数
         userService.addVisitCount(uid, sid);
-        //通过悲观锁
-        stockOrderService.createOrderByPessimistic(sid);
+        //减库存异步下单
+        stockOrderService.createOrderWithRedis(uid,sid);
         log.debug("购买成功");
         return "OK";
     }
     @RequestMapping("/getVertifyHash")
-    public String getVertifyHash(@RequestParam(value = "uid") int uid,
+    public String getVertifyHash(@RequestParam(value = "uid") String uid,
                                  @RequestParam(value = "sid") int sid){
         return userService.getVertifyHash(uid,sid);
     }

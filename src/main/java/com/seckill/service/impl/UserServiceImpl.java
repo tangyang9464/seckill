@@ -1,43 +1,55 @@
 package com.seckill.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.entity.Stock;
 import com.seckill.entity.User;
 import com.seckill.mapper.UserMapper;
 import com.seckill.service.StockService;
 import com.seckill.service.UserService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.seckill.utils.CacheKey;
+import com.seckill.utils.CookieUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author ty
- * @since 2021-02-03
+ * @author tangyang9464
  */
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
-    private StockService stockService;
+    private  StockService stockService;
     @Resource
     StringRedisTemplate stringRedisTemplate;
+    @Resource
+    ObjectMapper objectMapper;
 
     @Override
-    public String getVertifyHash(int uid, int sid) {
+    public String getPasswordHash(String salt, String password) {
+        StringBuilder str = new StringBuilder(salt);
+        str.append(password);
+        return DigestUtils.md5DigestAsHex(str.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public User getUserByCookie(HttpServletRequest request) throws JsonProcessingException {
+        String token = CookieUtil.getCookieValue(request, CacheKey.USER_KEY.getKey());
+        String json = stringRedisTemplate.opsForValue().get(token);
+        return json==null?null:objectMapper.readValue(json,User.class);
+    }
+
+    @Override
+    public String getVertifyHash(String uid, int sid) {
         if(!checkRequest(uid,sid)){
             return null;
         }
@@ -55,7 +67,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public Boolean checkRequest(int uid, int sid) {
+    public Boolean checkRequest(String uid, int sid) {
         //验证商品合法性
         Stock stock = stockService.getById(sid);
         if(stock==null){
@@ -83,7 +95,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void addVisitCount(int uid, int sid) {
+    public void addVisitCount(String uid, int sid) {
         String limitKey = CacheKey.LIMIT_KEY.getKey()+"_"+uid+"_"+sid;
         Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(limitKey,"0",10,TimeUnit.MINUTES);
         if(flag!=null && !flag) {
