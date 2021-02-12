@@ -28,7 +28,7 @@ public interface UserService extends IService<User> {
      * @return String
      * 请求非法时为null
      */
-    public String getVertifyHash(String uid,int sid);
+    public String getVertifyHash(String uid,Integer sid);
     /**
      * 验证请求合法性，包括用户、商品、秒杀时间、访问频率
      * @param uid
@@ -37,14 +37,14 @@ public interface UserService extends IService<User> {
      * 商品ID
      * @return Boolean
      */
-    public Boolean checkRequest(String uid,int sid);
+    public Boolean checkRequest(String uid,Integer sid);
     /**
      *增加用户-商品的访问次数
      * @param uid
      * @param sid
      * @return void
      */
-    public void addVisitCount(String uid,int sid);
+    public void addVisitCount(String uid,Integer sid);
     /**
      *获取加密后的密码
      * @param salt

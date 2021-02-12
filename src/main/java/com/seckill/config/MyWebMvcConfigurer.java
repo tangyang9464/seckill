@@ -1,21 +1,46 @@
-
 package com.seckill.config;
 
 import com.seckill.handler.LoginHandler;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.*;
+
+import javax.annotation.Resource;
 
 /**
- * 自定义MVC配置，如静态资源路径
+ * Mvc配置类
  * @author: ty
- * @create: 2021-02-05 21:13
+ * @create: 2021-02-05 21:06
  **/
+@Configuration
 public class MyWebMvcConfigurer implements WebMvcConfigurer {
+    @Resource
+    private LoginHandler loginHandler;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        //注册登录拦截器
+        InterceptorRegistration registration = registry.addInterceptor(loginHandler);
+        registration.addPathPatterns("/**");
+        registration.excludePathPatterns(
+                "/login/**",
+                "/static/**"
+        );
+    }
+    /**
+     *静态资源
+     */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**")
+        registry.addResourceHandler("/static/**")
                 .addResourceLocations("classpath:/static/");
+    }
+
+    @Override
+    /**
+     *视图路径
+     */
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/").setViewName("login");
+        registry.addViewController("/login/toLogin").setViewName("login");
     }
 }

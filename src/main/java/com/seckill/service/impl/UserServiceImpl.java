@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.entity.Stock;
 import com.seckill.entity.User;
+import com.seckill.exception.GlobalException;
 import com.seckill.mapper.UserMapper;
 import com.seckill.service.StockService;
 import com.seckill.service.UserService;
@@ -45,14 +46,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public User getUserByCookie(HttpServletRequest request) throws JsonProcessingException {
         String token = CookieUtil.getCookieValue(request, CacheKey.USER_KEY.getKey());
         String json = stringRedisTemplate.opsForValue().get(token);
-        return json==null?null:objectMapper.readValue(json,User.class);
+        if(json==null){
+            throw new GlobalException("用户信息不存在，应该是未登录");
+        }
+        return objectMapper.readValue(json,User.class);
     }
 
     @Override
-    public String getVertifyHash(String uid, int sid) {
-        if(!checkRequest(uid,sid)){
-            return null;
-        }
+    public String getVertifyHash(String uid, Integer sid) {
+        checkRequest(uid,sid);
 
         String salt = System.currentTimeMillis()+"";
         StringBuilder str = new StringBuilder(salt);
@@ -62,40 +64,45 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         //放入redis,设置3600秒
         String redisKey = CacheKey.HASH_KEY.getKey()+"_"+uid+"_"+sid;
         stringRedisTemplate.opsForValue().set(redisKey,hash,3600, TimeUnit.SECONDS);
-
         return hash;
     }
 
     @Override
-    public Boolean checkRequest(String uid, int sid) {
-        //验证商品合法性
-        Stock stock = stockService.getById(sid);
-        if(stock==null){
-            log.info("商品不存在");
-            return false;
-        }
-        //验证时间
-        if(LocalDateTime.now().isBefore(LocalDateTime.now())){
-            log.info("未到秒杀时间");
-            return false;
-        }
+    public Boolean checkRequest(String uid, Integer sid) {
         //验证用户合法性
-        if(this.getById(uid)==null){
+        if(uid==null || this.getById(uid)==null){
             log.info("用户不存在");
-            return false;
+            throw new GlobalException("用户不存在");
         }
         //验证用户操作频率
         String limitKey = CacheKey.LIMIT_KEY.getKey()+"_"+uid+"_"+sid;
         String limitValue = stringRedisTemplate.opsForValue().get(limitKey);
-        if(limitValue!=null && Integer.parseInt(limitKey)>10){
+        if(limitValue!=null && Integer.parseInt(limitValue)>10){
             log.info("操作频率过高");
-            return false;
+            throw new GlobalException("操作频率过高");
         }
+        //验证是否限购
+        if(stringRedisTemplate.opsForValue().get(uid)!=null){
+            throw new GlobalException("限购");
+        }
+        Stock stock = stockService.getById(sid);
+        //验证商品合法性
+        if(stock==null){
+            log.info("商品不存在");
+            throw new GlobalException("商品不存在");
+        }
+        //验证时间
+        if(stock.getStartDate().isAfter(LocalDateTime.now())){
+            log.info("未到秒杀时间");
+            throw new GlobalException("未到秒杀时间");
+        }
+
+
         return true;
     }
 
     @Override
-    public void addVisitCount(String uid, int sid) {
+    public void addVisitCount(String uid, Integer sid) {
         String limitKey = CacheKey.LIMIT_KEY.getKey()+"_"+uid+"_"+sid;
         Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(limitKey,"0",10,TimeUnit.MINUTES);
         if(flag!=null && !flag) {

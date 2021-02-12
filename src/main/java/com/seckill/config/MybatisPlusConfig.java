@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
+ * 配置乐观锁@Version
  * @author ty
  * @date 2021/2/2 20:50
  */

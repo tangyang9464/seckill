@@ -15,8 +15,8 @@ import java.util.List;
  * @author ty
  * @date 2021/2/4 14:11
  */
-//@Component
-public class WebListener implements InitializingBean{
+@Component
+public class InitializingStock implements InitializingBean{
     @Resource
     StockService stockService;
     @Resource

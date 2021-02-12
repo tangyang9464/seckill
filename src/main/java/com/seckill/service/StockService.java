@@ -18,5 +18,5 @@ public interface StockService extends IService<Stock> {
      * 商品ID
      * @return com.seckill.entity.Stock
      */
-    public Stock getByIdForUpdate(int id);
+    public Stock getByIdForUpdate(Integer id);
 }

@@ -3,9 +3,11 @@ package com.seckill.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.seckill.entity.Stock;
 import com.seckill.entity.StockOrder;
+import com.seckill.exception.GlobalException;
 import com.seckill.mapper.StockOrderMapper;
 import com.seckill.service.StockOrderService;
 import com.seckill.service.StockService;
+import com.seckill.utils.LuaReturnValue;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -18,8 +20,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author tangyang9464
@@ -51,21 +55,27 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
         Boolean flag = isEmpty.getOrDefault(sid,false);
         //库存为空
         if(flag){
-            throw new RuntimeException("redis库存不足，扣减失败");
+            throw new GlobalException("redis库存不足，扣减失败");
         }
 
-        // 执行 lua 脚本
+        // 执行 lua 脚本扣减库存
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
         // 指定 lua 脚本
-        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("/lua/saleStock.lua")));
+        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("/static/lua/saleStock.lua")));
         // 指定返回类型
         redisScript.setResultType(Long.class);
         // 参数一：redisScript，参数二：key列表，参数三：arg（可多个）
-        Long result = stringRedisTemplate.execute(redisScript, Collections.singletonList(sid.toString()));
-        if(result==-1) {
-            //内存标记
+        List<String> params = new ArrayList<>();
+        params.add(sid.toString());
+        params.add(uid);
+        Long result = stringRedisTemplate.execute(redisScript, params);
+        if(result.equals(LuaReturnValue.NO_STOCK.getValue()) ) {
+            //内存标记1
             isEmpty.put(sid,true);
             throw new RuntimeException("redis库存不足，扣减失败");
+        }
+        else if(result.equals(LuaReturnValue.LIMIT_BUY.getValue())){
+            throw new RuntimeException("用户限购一件，扣减失败");
         }
         else{
             String str = uid+"_"+sid;
@@ -78,7 +88,7 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
         String uid = s[0];
         Integer sid = Integer.parseInt(s[1]);
         //异步创建订单
-        createOrderByOptimistic(uid,sid);
+        createOrderByPessimistic(uid,sid);
     }
 
 
@@ -88,6 +98,7 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
      * @return void
      */
     @Override
+    @Transactional(rollbackFor = Exception.class,propagation = Propagation.REQUIRED)
     public void createOrderByOptimistic(String uid,Integer sid){
         //校验库存
         Stock stock = checkStockByOptimistic(sid);
@@ -122,12 +133,12 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
     }
 
     /**
-     * 校验库存
+     * 乐观锁校验库存
      * @param sid
      * 库存id
      * @return com.seckill.entity.Stock
      */
-    public Stock checkStockByOptimistic(int sid){
+    public Stock checkStockByOptimistic(Integer sid){
         Stock stock = stockService.getById(sid);
         if(stock.getCount()<=0) {
             throw new RuntimeException("库存不足");
@@ -135,12 +146,12 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
         return stock;
     }
     /**
-     * 悲观锁校验redis库存
+     * 悲观锁校验库存
      * @param sid
      * 库存id
      * @return com.seckill.entity.Stock
      */
-    public Stock checkStockByPessimistic(int sid){
+    public Stock checkStockByPessimistic(Integer sid){
         Stock stock = stockService.getByIdForUpdate(sid);
         if(stock.getCount()<=0) {
             throw new RuntimeException("库存不足");

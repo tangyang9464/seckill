@@ -16,7 +16,7 @@ public class CookieUtil {
             return null;
         }
         for(Cookie cookie:cookies){
-            if(cookie.getName()== "userToken"){
+            if(cookie.getName().equals(key)){
                 return cookie.getValue();
             }
         }

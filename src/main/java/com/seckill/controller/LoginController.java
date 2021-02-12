@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * @author tangyang9464
  */
 @RestController
-@RequestMapping({"/login","/"})
+@RequestMapping("/login")
 public class LoginController {
     @Resource
     UserService userService;
@@ -31,21 +31,22 @@ public class LoginController {
     @Resource
     ObjectMapper objectMapper;
 
-    @RequestMapping("doLogin")
+    @RequestMapping("/doLogin")
     public ResponseResult doLogin(@RequestParam String mobile,
                                   @RequestParam String password,
                                   HttpServletRequest request,
                                   HttpServletResponse response) throws JsonProcessingException {
         User user =  userService.getById(mobile);
-        String nowPassword = userService.getPasswordHash(user.getSalt(),password);
         if(user==null){
             return ResponseResult.error("手机号不存在");
         }
+        String nowPassword = userService.getPasswordHash(user.getSalt(),password);
         if(!StringUtils.equals(nowPassword,user.getPassword())){
             return ResponseResult.error("密码错误");
         }
         String userToken = UUID.randomUUID().toString();
         Cookie cookie=new Cookie("userToken",userToken);
+        cookie.setPath("/");
         response.addCookie(cookie);
         stringRedisTemplate.opsForValue().set(userToken,objectMapper.writeValueAsString(user),10, TimeUnit.DAYS);
         return ResponseResult.success();
