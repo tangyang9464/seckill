@@ -8,8 +8,7 @@
 
     <logger name="com.base22" level="TRACE"/>
     <logger name="org.apache.kafka" level="off" />
-
-
+    
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
