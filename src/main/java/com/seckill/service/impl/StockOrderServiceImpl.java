@@ -8,16 +8,20 @@ import com.seckill.mapper.StockOrderMapper;
 import com.seckill.service.StockOrderService;
 import com.seckill.service.StockService;
 import com.seckill.utils.LuaReturnValue;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.concurrent.ListenableFuture;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -29,6 +33,7 @@ import java.util.List;
  * @author tangyang9464
  */
 @Service
+@Slf4j
 public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOrder> implements StockOrderService {
     @Resource
     private StockService stockService;
@@ -67,7 +72,13 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
         // 参数一：redisScript，参数二：key列表，参数三：arg（可多个）
         List<String> params = new ArrayList<>();
         params.add(sid.toString());
-        params.add(uid);
+        StringBuilder s = new StringBuilder("uid_");
+        s.append(uid);
+        s.append("_");
+        s.append("sid_");
+        s.append(sid);
+        String uid_sid = s.toString();
+        params.add(uid_sid);
         Long result = stringRedisTemplate.execute(redisScript, params);
         if(result.equals(LuaReturnValue.NO_STOCK.getValue()) ) {
             //内存标记1
@@ -79,16 +90,26 @@ public class StockOrderServiceImpl extends ServiceImpl<StockOrderMapper, StockOr
         }
         else{
             String str = uid+"_"+sid;
-            kafkaTemplate.send("seckill",str);
+            stringRedisTemplate.opsForValue().set(uid_sid,"true");
+            //回调函数重试
+            ListenableFuture<SendResult<String, String>> future = kafkaTemplate.send("seckill", str);
+            future.addCallback(success -> log.info("成功，生产者发送消息"),
+                    fail -> {
+                        log.info("失败，生产者发送消息，原因：{}",fail.getMessage());
+                        kafkaTemplate.send("seckill", str);
+                    });
         }
     }
-    @KafkaListener(topics = "seckill",groupId = "g1")
-    public void consumer(ConsumerRecord<String,String> msg){
+    @KafkaListener(topics = "seckill",groupId = "g1",containerFactory="batchFactory")
+    public void consumer(ConsumerRecord<String,String> msg, Acknowledgment ack){
         String[] s = msg.value().split("_");
         String uid = s[0];
         Integer sid = Integer.parseInt(s[1]);
         //异步创建订单
         createOrderByPessimistic(uid,sid);
+        //手动提交
+        ack.acknowledge();
+        log.info("uid:"+uid+"__"+"消费信息");
     }
 
 

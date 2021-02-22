@@ -81,10 +81,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             log.info("操作频率过高");
             throw new GlobalException("操作频率过高");
         }
-        //验证是否限购
-        if(stringRedisTemplate.opsForValue().get(uid)!=null){
-            throw new GlobalException("限购");
-        }
+//        //验证是否限购
+//        StringBuilder str = new StringBuilder("uid_");
+//        str.append(uid);
+//        str.append("_");
+//        str.append("sid_");
+//        str.append(sid);
+//        if(stringRedisTemplate.opsForValue().get(str.toString())!=null){
+//            throw new GlobalException("限购");
+//        }
         Stock stock = stockService.getById(sid);
         //验证商品合法性
         if(stock==null){

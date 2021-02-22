@@ -12,7 +12,14 @@ spring:
   kafka:
     producer:
       bootstrap-servers: 127.0.0.1:9092
-#    mysql
+      #确认副本数
+      acks: all
+      #发送失败重试次数
+      retries: 5
+    consumer:
+      #关闭自动提交
+      enable-auto-commit: false
+  #    mysql
   datasource:
     #spy用于打印sql
 #    driver-class-name: com.p6spy.engine.spy.P6SpyDriver

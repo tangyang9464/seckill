@@ -16,16 +16,18 @@ public class MyWebMvcConfigurer implements WebMvcConfigurer {
     @Resource
     private LoginHandler loginHandler;
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        //注册登录拦截器
-        InterceptorRegistration registration = registry.addInterceptor(loginHandler);
-        registration.addPathPatterns("/**");
-        registration.excludePathPatterns(
-                "/login/**",
-                "/static/**"
-        );
-    }
+//    @Override
+//    public void addInterceptors(InterceptorRegistry registry) {
+//        //注册登录拦截器
+//        InterceptorRegistration registration = registry.addInterceptor(loginHandler);
+//        registration.addPathPatterns("/**");
+//        registration.excludePathPatterns(
+//                "/login/**",
+//                "/static/**",
+//                "/seckill/test/doSeckill",
+//                "/test/**"
+//        );
+//    }
     /**
      *静态资源
      */

@@ -33,7 +33,7 @@ public class SeckillController {
     /**
      *令牌桶限流,每秒10个
      */
-    private static final  RateLimiter rateLimiter = RateLimiter.create(10);
+    private static final  RateLimiter rateLimiter = RateLimiter.create(100);
 
     /**
      *创建秒杀订单
@@ -58,6 +58,29 @@ public class SeckillController {
         if(!stringRedisTemplate.opsForValue().get(key).equals(vertifyHash)){
             return ResponseResult.error("验证值非法");
         }
+        //增加访问次数
+        userService.addVisitCount(uid, sid);
+        //减库存异步下单
+        stockOrderService.createOrderWithRedis(uid,sid);
+        log.info("购买成功");
+
+        return ResponseResult.success();
+    }
+    /**
+     * 压测接口
+     * @param sid
+     * @param uid
+     * @return com.seckill.vo.ResponseResult
+     */
+    @RequestMapping("/test/doSeckill")
+    public ResponseResult createOrder(@RequestParam(name = "sid") Integer sid,
+                                      @RequestParam(name = "uid") String uid) {
+        //没有足够令牌可用
+        if(!rateLimiter.tryAcquire()){
+//            log.info("你被限制流了");
+            return ResponseResult.error("你被限制流了");
+        }
+
         //增加访问次数
         userService.addVisitCount(uid, sid);
         //减库存异步下单

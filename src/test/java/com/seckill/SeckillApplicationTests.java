@@ -13,10 +13,6 @@ import javax.annotation.Resource;
 @SpringBootTest
 class SeckillApplicationTests {
     @Resource
-    StockService stockService;
-    @Resource
-    StockMapper stockMapper;
-    @Resource
     StockOrderServiceImpl stockOrderService;
 
     @Test
