@@ -18,7 +18,7 @@
 
 ##### 项目要点
 
-<img src="./MakeDownImg/秒杀系统要点.png" style="zoom: 50%;" />
+<img src="./MarkDownImg/秒杀系统要点.png" style="zoom: 50%;" />
 
 ##### 项目流程
 
